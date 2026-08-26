@@ -36,21 +36,21 @@ jobs:
       shell: msys2 {0}
       run: |
         mkdir -p release
-        cp build/Sudoku-PVP.exe release/
+        cp build/Sudoku-Coop.exe release/
         cp -r build/assets release/assets
-        zip -r Sudoku-PVP-windows.zip release
+        zip -r Sudoku-Coop-windows.zip release
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
-        files: Sudoku-PVP-windows.zip
+        files: Sudoku-Coop-windows.zip
         tag_name: ${{ github.ref_name }}
         name: Release ${{ github.ref_name }}
         generate_release_notes: true
         body: |
           Release ${{ github.ref_name }}
           
-          * `Sudoku-PVP-windows.zip`
+          * `Sudoku-Coop-windows.zip`
 
           ### What's Changed:
         draft: false
