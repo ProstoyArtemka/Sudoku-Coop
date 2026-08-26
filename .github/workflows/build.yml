@@ -16,25 +16,28 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Setup MinGW
-      uses: egor-tensin/setup-mingw@v2
+    - name: Setup MSYS2 MinGW
+      uses: msys2/setup-msys2@v2
       with:
-        platform: x64
-
+        msystem: UCRT64
+        release: false
+          
     - name: Configure CMake
+      shell: msys2 {0}
       run: |
         cmake -B build -S . -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
-
+      
     - name: Build Project
-      run: cmake --build build --config Release
-
+      shell: msys2 {0}
+      run: cmake --build build
+    
     - name: Create ZIP Artifact
-      shell: powershell
+      shell: msys2 {0}
       run: |
-        New-Item -ItemType Directory -Force -Path release
-        Copy-Item -Path build/Sudoku-PVP.exe -Destination release/
-        Copy-Item -Path build/assets -Destination release/assets -Recurse -Force
-        Compress-Archive -Path release\* -DestinationPath Sudoku-PVP-windows.zip
+        mkdir -p release
+        cp build/Sudoku-PVP.exe release/
+        cp -r build/assets release/assets
+        zip -r Sudoku-PVP-windows.zip release
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
