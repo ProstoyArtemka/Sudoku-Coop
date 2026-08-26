@@ -33,9 +33,8 @@ int main() {
         process_inputs();
 
         BeginTextureMode(virtual_screen);
-        
-        ClearBackground(BLACK);
 
+        ClearBackground(BLACK);
         draw_screen();
 
         EndTextureMode();
