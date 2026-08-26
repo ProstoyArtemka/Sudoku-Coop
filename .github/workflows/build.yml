@@ -16,27 +16,22 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # 1. Настройка MSYS2 с автоматической установкой cmake, gcc и ninja
     - name: Setup MSYS2 MinGW
       uses: msys2/setup-msys2@v2
       with:
         msystem: UCRT64
-        release: false # Используем готовый MSYS2, не скачиваем заново
-        # pacboy автоматически подставит правильные префиксы под UCRT64 (установит gcc, cmake и ninja)
+        release: false
         pacboy: gcc:p cmake:p ninja:p 
 
-    # 2. Конфигурация CMake (Ninja работает в связке с GCC в разы быстрее и стабильнее)
     - name: Configure CMake
       shell: msys2 {0}
       run: |
         cmake -B build -S . -G "Ninja" -DCMAKE_BUILD_TYPE=Release
 
-    # 3. Сборка проекта
     - name: Build Project
       shell: msys2 {0}
       run: cmake --build build
 
-    # 4. Подготовка и упаковка в ZIP архив
     - name: Create ZIP Artifact
       shell: msys2 {0}
       run: |
@@ -45,7 +40,6 @@ jobs:
         cp -r build/assets release/assets
         zip -r Sudoku-PVP-windows.zip release
 
-    # 5. Автоматическое создание GitHub Release и прикрепление ZIP-архива
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
