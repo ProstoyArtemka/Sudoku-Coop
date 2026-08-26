@@ -1,0 +1,49 @@
+name: CMake Raylib Windows Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure CMake
+      run: cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build Project
+      run: cmake --build build --config Release
+
+    - name: Create ZIP Artifact
+      shell: powershell
+      run: |
+        New-Item -ItemType Directory -Force -Path release
+        Copy-Item -Path build/Sudoku-PVP.exe -Destination release/
+        Copy-Item -Path build/assets -Destination release/assets -Recurse -Force
+        Compress-Archive -Path release\* -DestinationPath Sudoku-PVP-windows.zip
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: Sudoku-PVP-windows.zip
+        tag_name: ${{ github.ref_name }}
+        name: Release ${{ github.ref_name }}
+        generate_release_notes: true
+        body: |
+          Release ${{ github.ref_name }}
+          
+          ### Assets included:
+          * `Sudoku-PVP-windows.zip` — Windows game client with assets.
+
+          ### What's Changed:
+
+        draft: false
+        prerelease: false
