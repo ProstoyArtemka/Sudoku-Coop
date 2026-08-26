@@ -21,7 +21,7 @@ jobs:
       with:
         msystem: UCRT64
         release: false
-        pacboy: gcc:p cmake:p ninja:p 
+        pacboy: gcc:p cmake:p ninja:p zip:p
 
     - name: Configure CMake
       shell: msys2 {0}
