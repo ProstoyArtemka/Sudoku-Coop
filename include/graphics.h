@@ -60,6 +60,7 @@ extern RenderTexture2D virtual_screen;
 extern float delta;
 
 extern float num_animation;
+extern float connect_animation;
 
 extern Button host_game_button;
 extern Button join_game_button;
@@ -69,6 +70,7 @@ extern Button difficulty_button;
 extern InputField ip_input_field;
 
 extern char error_text[256];
+extern char connect_text[64];
 
 void draw_screen();
 

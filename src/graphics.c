@@ -12,7 +12,11 @@ RenderTexture2D virtual_screen;
 float delta;
 
 Vector2i last_num_position = { 0 };
+
 float num_animation = 0.0f;
+float connect_animation = 0.0f;
+
+
 
 Button host_game_button = {
 
@@ -109,6 +113,7 @@ Button back_to_menu_button = {
 };
 
 char error_text[256];
+char connect_text[64];
 
 
 
@@ -299,6 +304,14 @@ void draw_timer() {
     draw_centered_text(timer_text, 54, text_position, WHITE);
 }
 
+void draw_connection_text() {
+
+    DrawText(connect_text, 50, 36, 36, transform_color(connect_animation, BLACK, WHITE));
+
+    tick(false, &connect_animation, 1.0f, delta);
+
+}
+
 void draw_screen() {
 
     delta = GetFrameTime();
@@ -320,18 +333,18 @@ void draw_screen() {
             break;
         }
 
-
         case (GAME): {
             
             draw_box();
             draw_nums();
             draw_current_num();
 
+            draw_connection_text();
+            
             if (!networking_state.is_connected) break;
 
             draw_sprite(cursor_sprite);
             lerp_mouse();
-
             draw_timer();
 
             break;
@@ -347,6 +360,7 @@ void draw_screen() {
             draw_button(back_to_menu_button);
 
             draw_timer();
+            draw_connection_text();
 
             break;
         }

@@ -109,18 +109,22 @@ void on_packet(PacketType type, void* data_buffer, int data_length) {
     char* data_ptr = (char*)data_buffer;
 
     switch (type) {
+
         case PACKET_INIT_GAME: {
 
-            int expected_size = sizeof(game_state.nums) + sizeof(game_state.editable_nums);
-            if (data_length == expected_size) {
-                
-                memcpy(game_state.nums, data_ptr, sizeof(game_state.nums));
-                memcpy(game_state.editable_nums, data_ptr + sizeof(game_state.nums), sizeof(game_state.editable_nums));
-                
-                if (!networking_state.is_host) networking_state.is_connected = true;
+            int expected_size = sizeof(game_state.nums) + sizeof(game_state.editable_nums) + sizeof(game_state.approximate_nums) + sizeof(int);
+            if (data_length != expected_size) break;
+            
+            int timer_seconds;
 
-                game_state.game_started_time = GetTime();
-            }
+            memcpy(game_state.nums, data_ptr, sizeof(game_state.nums));
+            memcpy(game_state.editable_nums, data_ptr + sizeof(game_state.nums), sizeof(game_state.editable_nums));
+            memcpy(game_state.approximate_nums, data_ptr + sizeof(game_state.nums) + sizeof(game_state.editable_nums), sizeof(game_state.approximate_nums));
+            memcpy(&timer_seconds, data_ptr + sizeof(game_state.nums) + sizeof(game_state.editable_nums) + sizeof(game_state.approximate_nums), sizeof(int));
+
+            if (!networking_state.is_host) networking_state.is_connected = true;
+
+            game_state.game_started_time = GetTime() - timer_seconds;
 
             break;
         }
@@ -128,28 +132,28 @@ void on_packet(PacketType type, void* data_buffer, int data_length) {
         case PACKET_NUMBER_UPDATED: {
 
             int expected_size = sizeof(int) * 4;
-            if (data_length == expected_size) {
+            if (data_length != expected_size) break;
 
-                int x;
-                int y;
-                int num;
-                int approximate_state;
+            int x;
+            int y;
+            int num;
+            int approximate_state;
 
-                memcpy(&x, data_ptr, sizeof(int));
-                memcpy(&y, data_ptr + sizeof(int), sizeof(int));
-                memcpy(&num, data_ptr + sizeof(int) * 2, sizeof(int));
-                memcpy(&approximate_state, data_ptr + sizeof(int) * 3, sizeof(int));
+            memcpy(&x, data_ptr, sizeof(int));
+            memcpy(&y, data_ptr + sizeof(int), sizeof(int));
+            memcpy(&num, data_ptr + sizeof(int) * 2, sizeof(int));
+            memcpy(&approximate_state, data_ptr + sizeof(int) * 3, sizeof(int));
 
-                if (approximate_state == -1) {
-                    game_state.nums[x][y] = num;
+            if (approximate_state == -1) {
+                game_state.nums[x][y] = num;
 
-                    check_solution(x, y);
+                check_solution(x, y);
 
-                    break;
-                }
-
-                game_state.approximate_nums[x][y][num] = approximate_state;
+                break;
             }
+
+            game_state.approximate_nums[x][y][num] = approximate_state;
+
 
             break;
         }
@@ -157,12 +161,10 @@ void on_packet(PacketType type, void* data_buffer, int data_length) {
         case PACKET_MOUSE_MOVED: {
 
             int expected_size = sizeof(int) * 2;
-            if (data_length == expected_size) {
+            if (data_length != expected_size) break;
 
-                memcpy(&networking_state.mouse_x, data_ptr, sizeof(int));
-                memcpy(&networking_state.mouse_y, data_ptr + sizeof(int), sizeof(int));
-
-            }
+            memcpy(&networking_state.mouse_x, data_ptr, sizeof(int));
+            memcpy(&networking_state.mouse_y, data_ptr + sizeof(int), sizeof(int));
 
             break;
         }
@@ -172,27 +174,53 @@ void on_packet(PacketType type, void* data_buffer, int data_length) {
             current_screen = WON;
             game_state.game_won_time = GetTime() - game_state.game_started_time;
 
-
         }
 
         default: break;
     }
 }
 
-void on_peer_connected() {
+void on_peer_connected(char* client_ip) {
 
     networking_state.is_connected = true;
 
-    int size = sizeof(game_state.nums) + sizeof(game_state.editable_nums);
+    if (game_state.game_started_time == 0)
+        game_state.game_started_time = GetTime();
+
+    int timer_seconds = (GetTime() - game_state.game_started_time);
+
+    int size = sizeof(game_state.nums) + sizeof(game_state.editable_nums) + sizeof(game_state.approximate_nums) + sizeof(int);
     char* buffer = malloc(size);
     memcpy(buffer, game_state.nums, sizeof(game_state.nums));
     memcpy(buffer + sizeof(game_state.nums), game_state.editable_nums, sizeof(game_state.editable_nums));
+    memcpy(buffer + sizeof(game_state.nums) + sizeof(game_state.editable_nums), game_state.approximate_nums, sizeof(game_state.approximate_nums));
+    memcpy(buffer + sizeof(game_state.nums) + sizeof(game_state.editable_nums) + sizeof(game_state.approximate_nums), &timer_seconds, sizeof(int));
 
     send_packet(PACKET_INIT_GAME, buffer, size);
 
-    game_state.game_started_time = GetTime();
+    snprintf(connect_text, sizeof(connect_text), "Player (%s) connected", client_ip);
+    connect_animation = 1.0f;
 
     free(buffer);
+}
+
+void on_peer_disconnected() {
+
+    networking_state.is_connected = false;
+
+    if (networking_state.is_host) {
+
+        strcpy(connect_text, "Player disconnected...");
+        connect_animation = 1.0f;
+
+        return;
+    }
+    
+    stop_game();
+
+    current_screen = MENU;
+    strcpy(error_text, "Host disconnected...");
+
 }
 
 void on_num_changed(int x, int y, int new_num, int approximate_state) {

@@ -49,7 +49,8 @@ void stop_game();
 void check_solution(int x, int y);
 
 void on_packet(PacketType type, void* data_buffer, int data_length);
-void on_peer_connected();
+void on_peer_connected(char* client_ip);
+void on_peer_disconnected();
 
 void on_num_changed(int x, int y, int new_num, int approximate_state);
 void on_mouse_moved(int x, int y);

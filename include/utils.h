@@ -23,6 +23,8 @@ void draw_centered_text(char* text, float text_size, Vector2 position, Color col
 
 Vector2i get_number_position_by_mouse(Vector2 mouse);
 
+Color transform_color(float t, Color from, Color to);
+
 void tick(bool add, float *value, float speed, float delta_time);
 
 #endif

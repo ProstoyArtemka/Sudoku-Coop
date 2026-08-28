@@ -197,7 +197,7 @@ void update_mouse_network() {
     if (last_sent_mouse_position.x == mouse_position.x || last_sent_mouse_position.y == mouse_position.y) return;
     
     double time = GetTime();
-    if (time - last_sent_mouse_time < 0.03) return;
+    if (time - last_sent_mouse_time < 0.02) return;
 
     last_sent_mouse_position = mouse_position;
     last_sent_mouse_time = time;
@@ -232,9 +232,12 @@ void process_inputs() {
         case (GAME): {
 
             select_num();
-            set_num();
-            remove_num();
-            change_approximate_nums();
+            
+            if (networking_state.is_connected) {
+                set_num();
+                remove_num();
+                change_approximate_nums();
+            }
 
             break;
         }

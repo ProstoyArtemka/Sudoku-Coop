@@ -79,3 +79,14 @@ void tick(bool add, float *value, float speed, float delta_time) {
     *value = fmaxf(*value - delta, 0.0f);
 
 }
+
+Color transform_color(float t, Color from, Color to) {
+
+    return (Color) {
+        from.r + (to.r - from.r) * t, 
+        from.g + (to.g - from.g) * t,
+        from.b + (to.b - from.b) * t,
+        from.a + (to.a - from.a) * t
+    };
+
+}

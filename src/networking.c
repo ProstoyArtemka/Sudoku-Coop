@@ -30,7 +30,7 @@ unsigned __stdcall receive_packets_thread(void *arg) {
 
     while (recieving_socket != INVALID_SOCKET) {
 
-        int bytes_received = recv(recieving_socket, (char*)&header, sizeof(PacketHeader), 0);
+        int bytes_received = recv(recieving_socket, (char*) &header, sizeof(PacketHeader), 0);
         if (bytes_received <= 0) break;
 
         if (header.length > 0) {
@@ -52,7 +52,9 @@ unsigned __stdcall receive_packets_thread(void *arg) {
     closesocket(recieving_socket);
 
     if (recieving_socket == target_socket) target_socket = INVALID_SOCKET;
-    
+
+    on_peer_disconnected();
+
     return 0;
 }
 
@@ -69,11 +71,9 @@ unsigned __stdcall accept_connections_thread(void *arg) {
         char client_ip[INET_ADDRSTRLEN];
         inet_ntop(AF_INET, &client_addr.sin_addr, client_ip, INET_ADDRSTRLEN);
 
-        printf("Peer connected! %s\n", client_ip);
-
         target_socket = incoming_peer;
 
-        on_peer_connected();
+        on_peer_connected(client_ip);
 
         SOCKET* buffer_socket = malloc(sizeof(SOCKET));
         *buffer_socket = incoming_peer;
@@ -130,12 +130,6 @@ NetworkingResult start_p2p_listener(char* port) {
 
     struct sockaddr_in bound_addr;
     int addr_len = sizeof(bound_addr);
-    
-    if (getsockname(listen_socket, (struct sockaddr*)&bound_addr, &addr_len) == 0) {
-        int assigned_port = ntohs(bound_addr.sin_port);
-        
-        printf("[P2P Server]: Listening on randomly assigned port: %d\n", assigned_port);
-    }
 
     if (listen(listen_socket, SOMAXCONN) == SOCKET_ERROR) {
 
@@ -179,7 +173,6 @@ NetworkingResult connect_to_peer(const char* peer_ip, const char* peer_port) {
     }
 
     freeaddrinfo(res);
-    printf("Connected to peer!\n");
 
     target_socket = connect_socket;
 
