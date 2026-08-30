@@ -9,7 +9,7 @@
 #include <game.h>
 #include <input.h>
 #include <graphics.h>
-#include <networking.h>
+#include <networking/networking.h>
 
 void init_window() {
 
@@ -43,7 +43,7 @@ int main() {
     }
 
     unload_resources();
-    stop_socket();
+    close_sockets();
 
     CloseWindow();
 }

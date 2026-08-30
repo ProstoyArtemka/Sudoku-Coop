@@ -19,7 +19,7 @@ void shuffle(int arr[], int n);
 void expand_rectangle(Rectangle *rectangle, float width, float height);
 void draw_rectangle_with_stroke(Rectangle *rectangle, float stroke_width, Color background, Color stroke);
 
-void draw_centered_text(char* text, float text_size, Vector2 position, Color color);
+void draw_centered_text(char *text, float text_size, Vector2 position, Color color);
 
 Vector2i get_number_position_by_mouse(Vector2 mouse);
 

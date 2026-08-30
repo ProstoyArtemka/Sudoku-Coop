@@ -46,7 +46,7 @@ void draw_rectangle_with_stroke(Rectangle *rectangle, float stroke_width, Color 
 
 }
 
-void draw_centered_text(char* text, float text_size, Vector2 position, Color color) {
+void draw_centered_text(char *text, float text_size, Vector2 position, Color color) {
 
     float text_width = MeasureText(text, text_size);
     Vector2 text_position = {

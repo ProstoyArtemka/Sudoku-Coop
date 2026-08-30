@@ -17,7 +17,7 @@ float time_backspace_pressed = 0.0f;
 Vector2 last_sent_mouse_position = { 0 };
 double last_sent_mouse_time = 0;
 
-char* difficulty_names[] = { "Easy", "Normal", "Hard", "Pizdec" };
+char *difficulty_names[] = { "Easy", "Normal", "Hard", "Pizdec" };
 
 void host_game_button_callback() {
 
@@ -49,11 +49,7 @@ void difficulty_button_callback() {
     difficulty_button.text[sizeof(difficulty_button.text) - 1] = '\0'; 
 }
 
-void ip_input_field_char_pressed_callback(char c) {
-
-
-
-}
+void ip_input_field_char_pressed_callback(char c) {}
 
 void update_button(Button *button) {
 
@@ -94,7 +90,7 @@ void update_input_field(InputField *field) {
 
     if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_V)) {
 
-        const char* clipboard = GetClipboardText();
+        const char *clipboard = GetClipboardText();
 
         if (clipboard != NULL) 
             strncat(field->text, clipboard, (field->text_max_length - strlen(field->text) - 1));
@@ -225,6 +221,7 @@ void process_inputs() {
             update_button(&difficulty_button);
 
             update_input_field(&ip_input_field);
+            update_input_field(&name_input_field);
 
             break;
         }

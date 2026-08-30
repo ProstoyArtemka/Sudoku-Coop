@@ -7,6 +7,7 @@
 #include <game.h>
 #include <string.h>
 #include <reasings.h>
+#include <time.h>
 
 RenderTexture2D virtual_screen;
 float delta;
@@ -14,7 +15,6 @@ float delta;
 Vector2i last_num_position = { 0 };
 
 float num_animation = 0.0f;
-float connect_animation = 0.0f;
 
 
 
@@ -72,7 +72,7 @@ InputField ip_input_field = {
     .rect = (Rectangle) {
 
         .x = (1920 / 2) - 400,
-        .y = 400,
+        .y = 425,
         .width = 800,
         .height = 100
 
@@ -86,6 +86,31 @@ InputField ip_input_field = {
     .char_pressed_callback = ip_input_field_char_pressed_callback
 };
 
+InputField name_input_field = {
+  
+    .text_max_length = 24,
+    .text = "",
+    .placeholder = "Input your name",
+
+    .text_height = 54,
+    .rect = (Rectangle) {
+
+        .x = (1920 / 2) - 400,
+        .y = 300,
+        .width = 800,
+        .height = 100
+
+    },
+
+    .selected = 0,
+    .hovered = 0,
+
+    .selected_timer = 0.0f,
+
+    .char_pressed_callback = ip_input_field_char_pressed_callback
+
+};
+
 Sprite cursor_sprite = {
 
     .path = "./assets/cursor.png",
@@ -94,6 +119,8 @@ Sprite cursor_sprite = {
     .texture = { 0 }
 
 };
+
+Vector2 cursor_positions[MAX_AMOUNT_OF_PLAYERS];
 
 Button back_to_menu_button = {
 
@@ -112,8 +139,7 @@ Button back_to_menu_button = {
     .callback = back_to_menu_button_callback
 };
 
-char error_text[256];
-char connect_text[64];
+char error_text[256] = "Test";
 
 
 
@@ -250,7 +276,7 @@ void draw_input_field(InputField field) {
     Vector2 text_position = { field.rect.x + (field.rect.width / 2.0f), field.rect.y + (field.rect.height / 2.0f)};
 
     bool is_placeholder = strlen(field.text) == 0;
-    char* text = is_placeholder ? field.placeholder : field.text;
+    char *text = is_placeholder ? field.placeholder : field.text;
 
     draw_centered_text(text, field.text_height, text_position, is_placeholder ? GRAY : WHITE);
 
@@ -268,48 +294,56 @@ void draw_input_field(InputField field) {
     }
 }
 
-void draw_sprite(Sprite sprite) {
+void draw_sprite(Sprite sprite, Vector2 position) {
 
     Rectangle source = { 0.0f, 0.0f, (float) sprite.texture.width, (float) sprite.texture.height };
-    Rectangle destination = { sprite.position.x, sprite.position.y, sprite.size.x, sprite.size.y };
+    Rectangle destination = { sprite.position.x + position.x, sprite.position.y + position.y, sprite.size.x, sprite.size.y };
     Vector2 origin = { 0.0f, 0.0f };
 
     DrawTexturePro(sprite.texture, source, destination, origin, 0.0f, WHITE);
 
 }
 
-void lerp_mouse() {
+void draw_cursors() {
+
+    for (int i = 0; i < MAX_AMOUNT_OF_PLAYERS; i++) {
+        if (!networking_state.players[i].is_connected) continue;
+
+        draw_sprite(cursor_sprite, cursor_positions[i]);
+        DrawText(networking_state.players[i].name, cursor_positions[i].x + 24, cursor_positions[i].y + 24, 24, WHITE);
+    }
+    
+}
+
+void lerp_cursors() {
 
     float t = 0.25f * (delta * GetFPS());
     if (t > 1.0f) t = 1.0f;
 
-    cursor_sprite.position = Vector2Lerp(
-        cursor_sprite.position,
-        (Vector2) { networking_state.mouse_x, networking_state.mouse_y },
-        t
-    );
+    for (size_t i = 0; i < MAX_AMOUNT_OF_PLAYERS; i++) {
 
+        ConnectedPlayer player = networking_state.players[i];
+        if (!player.is_connected) continue;
+
+        cursor_positions[i] = Vector2Lerp(
+            cursor_positions[i],
+            (Vector2) { player.mouse_x, player.mouse_y },
+            t
+        );
+    }
 }
 
 void draw_timer() {
 
-    int time = current_screen == GAME ? GetTime() - game_state.game_started_time : game_state.game_won_time;
-    int minutes = (int) time / 60;
-    int seconds = (int) time % 60;
+    int raw_time = current_screen == GAME ? time(NULL) - game_state.game_started_time : game_state.game_won_time;
+    int minutes = (int) raw_time / 60;
+    int seconds = (int) raw_time % 60;
 
     char timer_text[16];
     sprintf(timer_text, "%02d:%02d", minutes, seconds); 
     
     Vector2 text_position = (Vector2) { 1920.0f / 2.0f, 100.0f };
     draw_centered_text(timer_text, 54, text_position, WHITE);
-}
-
-void draw_connection_text() {
-
-    DrawText(connect_text, 50, 36, 36, transform_color(connect_animation, BLACK, WHITE));
-
-    tick(false, &connect_animation, 1.0f, delta);
-
 }
 
 void draw_screen() {
@@ -321,14 +355,15 @@ void draw_screen() {
         case (MENU): {
             draw_centered_text("Sudoku COOP", 96, (Vector2) {1920 / 2, 200}, WHITE);
 
-            draw_button(host_game_button);
-
+            draw_input_field(name_input_field);
             draw_input_field(ip_input_field);
+
+            draw_button(host_game_button);
             draw_button(join_game_button);
 
             draw_button(difficulty_button);
 
-            draw_centered_text(error_text, 54, (Vector2) { 1920 / 2, 300}, RED);
+            draw_centered_text(error_text, 54, (Vector2) { 1920 / 2, 75}, RED);
 
             break;
         }
@@ -338,13 +373,16 @@ void draw_screen() {
             draw_box();
             draw_nums();
             draw_current_num();
-
-            draw_connection_text();
             
-            if (!networking_state.is_connected) break;
+            if (!networking_state.is_connected) {
+            
+                draw_centered_text("Waiting for players...", 54, (Vector2) { 1920.0f / 2.0f, 100.0f }, WHITE);
+            
+                break;
+            }
 
-            draw_sprite(cursor_sprite);
-            lerp_mouse();
+            draw_cursors();
+            lerp_cursors();
             draw_timer();
 
             break;
@@ -354,13 +392,12 @@ void draw_screen() {
 
             draw_centered_text("Game Won!", 96, (Vector2) { 1920 / 2, 200 }, WHITE);
 
-            draw_sprite(cursor_sprite);
-            lerp_mouse();
+            draw_cursors();
+            lerp_cursors();
 
             draw_button(back_to_menu_button);
 
             draw_timer();
-            draw_connection_text();
 
             break;
         }
@@ -410,6 +447,11 @@ void load_resources() {
 
     difficulty_button.text = malloc(32);
     strcpy(difficulty_button.text, "Easy");
+
+    for (size_t i = 0; i < MAX_AMOUNT_OF_PLAYERS; i++)
+        cursor_positions[i] = (Vector2) {-1, -1};
+
+    snprintf(name_input_field.text, sizeof(name_input_field.text), "Player%d", (rand() % 100));
 
 }
 

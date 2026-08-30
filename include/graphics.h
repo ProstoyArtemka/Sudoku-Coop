@@ -68,6 +68,7 @@ extern Button back_to_menu_button;
 extern Button difficulty_button;
 
 extern InputField ip_input_field;
+extern InputField name_input_field;
 
 extern char error_text[256];
 extern char connect_text[64];
