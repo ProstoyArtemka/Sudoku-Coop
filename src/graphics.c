@@ -12,10 +12,16 @@
 RenderTexture2D virtual_screen;
 float delta;
 
-Vector2i last_num_position = { 0 };
+Vector2i last_num_position = { 0, 0 };
+Vector2 lerp_num_position = { 0, 0 };
+bool num_position_changed = false;
 
-float num_animation = 0.0f;
+float current_num_change_animation = 0.0f;
+float current_num_move_animation = 0.0f;
 
+float game_start_animation = 0;
+
+float won_animation = 0.0f;
 
 
 Button host_game_button = {
@@ -141,7 +147,8 @@ Button back_to_menu_button = {
 
 char error_text[256] = "Test";
 
-
+Confetti confettis[CONFETTI_AMOUNT];
+float confetti_lifetime = 0.0f;
 
 void draw_box() {
 
@@ -193,25 +200,38 @@ void draw_current_num() {
     Vector2i num_position = get_number_position_by_mouse(mouse_position);
 
     if (num_position.x != last_num_position.x || num_position.y != last_num_position.y) {
-        last_num_position = num_position;
+        
+        if (game_state.editable_nums[num_position.x][num_position.y]) {
+            lerp_num_position = Vector2Normalize((Vector2) { num_position.x - last_num_position.x, num_position.y - last_num_position.y });
+        
+            current_num_move_animation = 0.0f;
+        }
 
-        num_animation = 0.0f;
+        last_num_position = num_position;
     }
 
     if (num_position.x < 0 || num_position.x > 8 || num_position.y < 0 || num_position.y > 8) return;
     if (!game_state.editable_nums[num_position.x][num_position.y]) return;
 
-    tick(true, &num_animation, 10.0f, delta);
+    tick(true, &current_num_change_animation, 10.0f, delta);
+    tick(true, &current_num_move_animation, 10.0f, delta);
+
+    float move_ease = EaseExpoOut(current_num_move_animation, 0.0f, 1.0f, 1.0f);
+
+    Vector2 new_num_position = {
+        (num_position.x * 90) - ((lerp_num_position.x * 90) * (1.0f - move_ease)),
+        (num_position.y * 90) - ((lerp_num_position.y * 90) * (1.0f - move_ease))
+    };
 
     Vector2 text_position = {
-        (num_position.x * 90) + 595.0f - (is_shift_down ? 22.5f : 0.0f) + (is_shift_down ? ((game_state.current_num - 1) % 3) * 24.0f : 0.0f),
-        (num_position.y * 90) + 185.0f - (is_shift_down ? 22.5f : 0.0f) + (is_shift_down ? ((game_state.current_num - 1) / 3) * 24.0f : 0.0f),
+        new_num_position.x + 595.0f - (is_shift_down ? 22.5f : 0.0f) + (is_shift_down ? ((game_state.current_num - 1) % 3) * 24.0f : 0.0f),
+        new_num_position.y + 185.0f - (is_shift_down ? 22.5f : 0.0f) + (is_shift_down ? ((game_state.current_num - 1) / 3) * 24.0f : 0.0f),
     };
 
     char text[2];
     snprintf(text, sizeof(text), "%d", game_state.current_num);
 
-    draw_centered_text(text, size * EaseCircInOut(num_animation, 0.0f, 1.0f, 1.0f), text_position, WHITE);
+    draw_centered_text(text, size * EaseCircInOut(current_num_change_animation, 0.0f, 1.0f, 1.0f), text_position, WHITE);
 
 }
 
@@ -239,19 +259,26 @@ void draw_nums() {
     
     for (int x = 0; x < 9; x++) {
         for (int y = 0; y < 9; y++) {
-
+            
             if (game_state.nums[x][y] == -1) {
                 draw_approximate_nums(x, y);
             
                 continue;
             }
 
-            Vector2 position = { 595.0f + (x * 90.0f), 185.0f + (y * 90.0f) };
+            int index = x + y;
+            if (game_start_animation == 0) return; 
+
+            float local_animation = ((game_start_animation * 2.0f) - (index / 18.0f));            
+            float ease = EaseCubicInOutNormalized(Clamp(local_animation, 0.0f, 1.0f));
+            float inverseEase = (1.0f - ease);
+
+            Vector2 position = { (595.0f + (x * 90.0f)) * ease + (1920.0f / 2.0f * inverseEase), (185.0f + (y * 90.0f)) * ease + (1080.0f / 2.0f * inverseEase) };
 
             char text[4];
             snprintf(text, sizeof(text), "%d", game_state.nums[x][y]);
 
-            draw_centered_text(text, 54, position, game_state.editable_nums[x][y] ? game_state.invalid_nums[x][y] ? RED : GRAY : WHITE);
+            draw_centered_text(text, 54 * ease, position, game_state.editable_nums[x][y] ? game_state.invalid_nums[x][y] ? RED : GRAY : WHITE);
 
         }
     }
@@ -346,6 +373,54 @@ void draw_timer() {
     draw_centered_text(timer_text, 54, text_position, WHITE);
 }
 
+void update_confetti() {
+    confetti_lifetime += delta;
+
+    for (int i = 0; i < CONFETTI_AMOUNT; i++) {
+        float fall_speed = (confettis[i].seed + 0.5f) * 150.0f; 
+        
+        confettis[i].y += fall_speed * delta;
+        
+        if (confettis[i].y > VIRTUAL_SCREEN_HEIGHT + 100)
+            confettis[i].y = -100;
+    }
+}
+
+
+void spawn_confetti() {
+
+    for (int i = 0; i < CONFETTI_AMOUNT; i++) {
+        confettis[i].seed = (rand() % 100) / 100.0f;
+        
+        confettis[i].x = (rand() % VIRTUAL_SCREEN_WIDTH);
+        confettis[i].y = -(rand() % VIRTUAL_SCREEN_HEIGHT);
+        confettis[i].color = (rand() << 16) | rand();
+
+        confettis[i].speed_y = 0.0f;
+
+    }
+
+    confetti_lifetime = 0;
+}
+
+void draw_confetti() {
+
+    for (int i = 0; i < CONFETTI_AMOUNT; i++) {
+
+        float size = (confettis[i].seed + 0.2f) * 20.0f;
+
+        Rectangle rect = { confettis[i].x, confettis[i].y, size, size * 0.6f };
+        Vector2 origin = { size / 2.0f, (size * 0.6f) / 2.0f };
+
+        Color color = (Color) { confettis[i].color & 0xFF, (confettis[i].color >> 8) & 0xFF, (confettis[i].color >> 16) & 0xFF, 255 };
+        float rotation = (confettis[i].seed * 360.0f) + (confetti_lifetime * 200.0f * (confettis[i].seed + 0.5f));
+
+        DrawRectanglePro(rect, origin, rotation, color);
+
+    }
+
+}
+
 void draw_screen() {
 
     delta = GetFrameTime();
@@ -353,6 +428,7 @@ void draw_screen() {
     switch (current_screen) {
 
         case (MENU): {
+
             draw_centered_text("Sudoku COOP", 96, (Vector2) {1920 / 2, 200}, WHITE);
 
             draw_input_field(name_input_field);
@@ -374,6 +450,8 @@ void draw_screen() {
             draw_nums();
             draw_current_num();
             
+            tick(networking_state.is_connected, &game_start_animation, 0.4f, delta);
+
             if (!networking_state.is_connected) {
             
                 draw_centered_text("Waiting for players...", 54, (Vector2) { 1920.0f / 2.0f, 100.0f }, WHITE);
@@ -389,6 +467,10 @@ void draw_screen() {
         }
 
         case (WON): {
+
+
+            draw_confetti();
+            update_confetti();
 
             draw_centered_text("Game Won!", 96, (Vector2) { 1920 / 2, 200 }, WHITE);
 

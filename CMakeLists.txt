@@ -17,7 +17,7 @@ FetchContent_MakeAvailable(raylib)
 
 file(GLOB_RECURSE SOURCES "src/*.c")
 
-add_executable("${PROJECT_NAME}" ${SOURCES})
+add_executable("${PROJECT_NAME}" WIN32 ${SOURCES})
 
 target_include_directories("${PROJECT_NAME}" PRIVATE include libs)
 

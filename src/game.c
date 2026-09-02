@@ -86,14 +86,28 @@ void check_solution(int x, int y) {
 
     if (memcmp(game_state.nums, game_state.solution, sizeof(game_state.nums)) != 0) return;
 
-    current_screen = WON;
     game_state.game_won_time = time(NULL) - game_state.game_started_time;
 
+    on_game_won();
+
     if (networking_state.is_host) {
-        PacketHeader header = (PacketHeader) { .type = PACKET_GAME_WON, .length = sizeof(0) };
- 
-        send_packet_to_everyone(header, 0, 0);
+        PacketHeader header = (PacketHeader) { .type = PACKET_GAME_WON, .length = sizeof(int) };
+        
+        char* buffer = malloc(sizeof(int));
+        memcpy(buffer, &game_state.game_won_time, sizeof(int));
+
+        send_packet_to_everyone(header, buffer, 0);
+
+        free(buffer);
     }
+}
+
+void on_game_won() {
+
+    current_screen = WON;
+
+    spawn_confetti();
+
 }
 
 void on_player_connected(int player_index) {

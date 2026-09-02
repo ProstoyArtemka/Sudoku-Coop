@@ -10,6 +10,8 @@
 
 #define TRANSPARENT (Color) { 0, 0, 0, 0 }
 
+#define CONFETTI_AMOUNT 256
+
 typedef void (*ButtonCallback)();
 typedef void (*InputFieldCharPressed)(char c);
 
@@ -56,10 +58,20 @@ typedef struct {
 
 } Sprite;
 
+typedef struct {
+
+    float x;
+    float y;
+    int color;
+    float speed_y;
+    float seed;
+
+} Confetti;
+
 extern RenderTexture2D virtual_screen;
 extern float delta;
 
-extern float num_animation;
+extern float current_num_change_animation;
 extern float connect_animation;
 
 extern Button host_game_button;
@@ -72,6 +84,8 @@ extern InputField name_input_field;
 
 extern char error_text[256];
 extern char connect_text[64];
+
+void spawn_confetti();
 
 void draw_screen();
 

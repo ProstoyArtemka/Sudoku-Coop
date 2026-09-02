@@ -37,6 +37,8 @@ void stop_game();
 
 void check_solution(int x, int y);
 
+void on_game_won();
+
 void on_player_connected(int player_index);
 void on_player_disconnected(int player_index);
 

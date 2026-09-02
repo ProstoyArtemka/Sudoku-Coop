@@ -83,8 +83,12 @@ void on_packet_client(PacketType type, void *data_buffer, int data_length) {
 
         case PACKET_GAME_WON: {
 
-            current_screen = WON;
-            game_state.game_won_time = time(NULL) - game_state.game_started_time;
+            int expected_size = sizeof(int);
+            if (data_length != expected_size) break;
+
+            memcpy(&game_state.game_won_time, data_ptr, sizeof(int));
+
+            on_game_won();
 
             break;
         }
@@ -99,7 +103,6 @@ void on_packet_client(PacketType type, void *data_buffer, int data_length) {
 
         case PACKET_PLAYER_DISCONNECTED: {
 
-            strcpy(networking_state.players[player_index].name, "");
             networking_state.players[player_index].is_connected = false;
 
             break;

@@ -222,7 +222,7 @@ int get_amount_to_remove() {
 
     switch (difficulty) {
     
-        case EASY: return (rand() % 5) + 20;
+        case EASY: return (rand() % 5) + 5;
         case NORMAL: return (rand() % 5) + 32;
         case HARD: return (rand() % 5) + 43;
         case PIZDEC: return (rand() % 5) + 54;

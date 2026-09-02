@@ -129,6 +129,10 @@ EASEDEF float EaseCubicInOut(float t, float b, float c, float d)                
     t -= 2.0f; return (c/2.0f*(t*t*t + 2.0f) + b);
 }
 
+EASEDEF float EaseCubicInOutNormalized(float t) {
+    return t < 0.5f ? 4.0f * t * t * t : 1.0f - pow(-2.0f * t + 2.0f, 3.0f) / 2.0f;
+}
+
 // Quadratic Easing functions
 EASEDEF float EaseQuadIn(float t, float b, float c, float d) { t /= d; return (c*t*t + b); }                         // Ease: Quadratic In
 EASEDEF float EaseQuadOut(float t, float b, float c, float d) { t /= d; return (-c*t*(t - 2.0f) + b); }              // Ease: Quadratic Out

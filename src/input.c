@@ -108,7 +108,7 @@ void select_num() {
     if (key_pressed >= KEY_ONE && key_pressed <= KEY_NINE) {
         game_state.current_num = key_pressed - KEY_ONE + 1;
     
-        num_animation = 0.0f;
+        current_num_change_animation = 0.0f;
     }
 
 }
@@ -231,9 +231,11 @@ void process_inputs() {
             select_num();
             
             if (networking_state.is_connected) {
+                
                 set_num();
                 remove_num();
                 change_approximate_nums();
+
             }
 
             break;
