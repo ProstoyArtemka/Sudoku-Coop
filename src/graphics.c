@@ -362,7 +362,7 @@ void lerp_cursors() {
 
 void draw_timer() {
 
-    int raw_time = current_screen == GAME ? time(NULL) - game_state.game_started_time : game_state.game_won_time;
+    int raw_time = current_screen == GAME ? (time(NULL) - game_state.game_started_time) : game_state.game_won_time;
     int minutes = (int) raw_time / 60;
     int seconds = (int) raw_time % 60;
 

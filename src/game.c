@@ -91,12 +91,12 @@ void check_solution(int x, int y) {
     on_game_won();
 
     if (networking_state.is_host) {
-        PacketHeader header = (PacketHeader) { .type = PACKET_GAME_WON, .length = sizeof(int) };
+        PacketHeader header = (PacketHeader) { .type = PACKET_GAME_WON, .length = sizeof(double) };
         
-        char* buffer = malloc(sizeof(int));
-        memcpy(buffer, &game_state.game_won_time, sizeof(int));
+        char* buffer = malloc(sizeof(double));
+        memcpy(buffer, &game_state.game_won_time, sizeof(double));
 
-        send_packet_to_everyone(header, buffer, 0);
+        send_packet(header, buffer);
 
         free(buffer);
     }

@@ -83,10 +83,11 @@ void on_packet_client(PacketType type, void *data_buffer, int data_length) {
 
         case PACKET_GAME_WON: {
 
-            int expected_size = sizeof(int);
+
+            int expected_size = sizeof(double);
             if (data_length != expected_size) break;
 
-            memcpy(&game_state.game_won_time, data_ptr, sizeof(int));
+            memcpy(&game_state.game_won_time, data_ptr, sizeof(double));
 
             on_game_won();
 
